@@ -31,7 +31,6 @@ impl Chunk {
   }
 
   pub fn index(&self, x: isize, y: isize) -> usize {
-    println!("chunk ({}, {}) pos: ({}, {})", self.x, self.y, x, y);
     (x - self.x + (y - self.y) * SIZE) as usize
   }
 
