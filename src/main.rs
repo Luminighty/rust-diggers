@@ -4,6 +4,7 @@ mod automata;
 use automata::{World, Cell};
 use pixels::{self, SurfaceTexture, Pixels, Error};
 
+use rand::thread_rng;
 use winit::{
 	dpi::{LogicalSize, PhysicalPosition},
 	event::{Event, VirtualKeyCode, WindowEvent, ElementState},
@@ -12,9 +13,9 @@ use winit::{
 };
 
 
-const WIDTH: u32 = 300;
-const HEIGHT: u32 = 300;
-const UPSCALE: f64 = 3.0;
+pub const WIDTH: u32 = 300;
+pub const HEIGHT: u32 = 300;
+const UPSCALE: f64 = 2.0;
 
 fn main() -> Result<(), Error>  {
 
@@ -31,11 +32,6 @@ fn main() -> Result<(), Error>  {
 	};
 
 	let mut world = World::new(WIDTH as isize, HEIGHT as isize);
-	for x in 45..60 {
-		for y in 48..52 {
-			world.set_cell(x, y, Cell::Rock);
-		}
-	}
 
 	let mut pixels = {
 			let window_size = window.inner_size();
@@ -68,12 +64,16 @@ fn main() -> Result<(), Error>  {
 					Some(VirtualKeyCode::F2) => { selected_cell = Cell::Rock; },
 					Some(VirtualKeyCode::F3) => { selected_cell = Cell::Sand; },
 					Some(VirtualKeyCode::F4) => { selected_cell = Cell::Water; },
+					Some(VirtualKeyCode::F5) => { selected_cell = Cell::Smoke; },
+					Some(VirtualKeyCode::F6) => { selected_cell = Cell::Oil; },
+					Some(VirtualKeyCode::F7) => { selected_cell = Cell::Slime; },
+					Some(VirtualKeyCode::F8) => { selected_cell = Cell::Dirt; },
 					_ => {}
 				}
 			}
 			Event::MainEventsCleared => {
 				if mouse_state == ElementState::Pressed {
-					const BRUSH: isize = 3;
+					const BRUSH: isize = 4;
 					for brush_x in -BRUSH..BRUSH {
 						for brush_y in -BRUSH..BRUSH {
 							world.set_cell(brush_x + mouse.x as isize, brush_y + mouse.y as isize, selected_cell)

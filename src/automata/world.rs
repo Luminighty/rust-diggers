@@ -1,89 +1,71 @@
-use super::Cell;
+use std::{collections::HashMap, hash::Hash, cell::RefCell, borrow::BorrowMut, rc::Rc, ops::{Deref, DerefMut}};
+
+use rand::{seq::SliceRandom, rngs::ThreadRng, thread_rng};
+
+use super::{Cell, chunk::{Chunk, self, commit_chunk_changes}};
 
 type Move = (isize, isize, isize, isize);
 
-#[derive(Debug, Clone)]
+type StoredChunk = Rc<RefCell<Chunk>>;
+
+#[derive(Debug)]
 pub struct World {
-	pub height: isize,
-	pub width: isize,
-	pub cells: Vec<Cell>,
-	changes: Vec<Move>
+	chunks_map: HashMap<(isize, isize), StoredChunk>,
+	chunks: Vec<StoredChunk>
 }
 
 impl World {
 	pub fn new(width: isize, height: isize) -> Self {
-		let cells = Vec::from_iter((0..height*width).map(|_| Cell::Air).collect::<Vec<Cell>>());
-		Self { cells, width, height, changes: Vec::new() }
+		Self { chunks_map: HashMap::new(), chunks: Vec::new() }
 	}
 
-  fn index(&self, x: isize, y: isize) -> Option<usize> {
-		let x: usize = x.try_into().ok()?;
-		let y: usize = y.try_into().ok()?;
-    Some(self.width as usize * y + x)
-  }
-
-	pub fn set_cell(&mut self, x: isize, y: isize, cell: Cell){
-		if x < 0 || x >= self.width {
-			return;
-		}
-		if y < 0 || y >= self.height {
-			return;
-		}
-    if let Some(index) = self.index(x, y) {
-      self.cells[index] = cell;
-    }
+	fn lookup_chunk(&self, x: isize, y: isize) -> Option<&StoredChunk> {
+		self.chunks_map.get(&( x / chunk::SIZE, y / chunk::SIZE ))
 	}
 
-	pub fn get_cell(&self, x: isize, y: isize) -> Option<&Cell> {
-		self.cells.get(self.index(x, y)?)
+	pub fn get_chunk(&self, index: usize) -> Option<&StoredChunk> {
+		self.chunks.get(index)
 	}
 
-	pub fn is_empty(&self, x: isize, y: isize) -> bool {
-		match self.get_cell(x, y) {
-			Some(&Cell::Air) => true,
-			_ => false,
+	pub fn chunk_length(&self) -> usize {
+		self.chunks.len()
+	}
+
+	pub fn set_cell(&mut self, x: isize, y: isize, cell: Cell) {
+		if let Some(chunk) = self.lookup_chunk(x, y) {
+			let chunk = chunk.deref();
+			chunk.borrow_mut().set_cell(x, y, cell);
+		} else {
+			let mut chunk_x = (x / chunk::SIZE) * chunk::SIZE;
+			let mut chunk_y = (y / chunk::SIZE) * chunk::SIZE;
+			if x < 0 { chunk_x -= 1; }
+			if y < 0 { chunk_y -= 1; }
+
+			let mut chunk = Chunk::new(chunk_x, chunk_y);
+			chunk.set_cell(x, y, cell);
+			let chunk = Rc::new(RefCell::new(chunk));
+			self.chunks_map.insert(( x / chunk::SIZE, y / chunk::SIZE ), chunk.clone());
+			self.chunks.push(chunk)
 		}
+	}
+
+	pub fn get_cell(&self, x: isize, y: isize) -> Option<Cell> {
+		self.lookup_chunk(x, y)?.borrow().get_cell(x, y)
 	}
 
 	pub fn move_cell(&mut self, from_x: isize, from_y: isize, to_x: isize, to_y: isize) {
-		self.changes.push((to_x, to_y, from_x, from_y)) // Want to sort on target position
+		if let Some(chunk) = self.lookup_chunk(to_x, to_y) {
+			let chunk = chunk.deref();
+			chunk.borrow_mut().move_cell(from_x, from_y, to_x, to_y);
+		}
 	}
 
 	pub fn commit_changes(&mut self) {
-		self.changes.sort_unstable();
-		let mut last_target = None;
-		for (to_x, to_y, from_x, from_y) in self.changes.clone() {
-			if let Some((last_x, last_y)) = last_target {
-				if last_x == to_x && last_y == to_y {
-					continue;
-				}
-			}
-			if let Some(cell) = self.get_cell(from_x, from_y) {
-				self.set_cell(to_x, to_y, *cell);
-				self.set_cell(from_x, from_y, Cell::Air);
-			}
-			
-			last_target = Some((to_x, to_y))
+		for i in 0..self.chunks.len() {
+			let chunk = self.chunks[i].clone();
+			let chunk = chunk.deref();
+			chunk.borrow_mut().commit_changes(self);
 		}
-		self.changes.clear()
 	}
 
-	pub fn print(&self) {
-		let width = self.width as isize;
-		let height = self.height as isize;
-		for y in 0..height {
-			for x in 0..width {
-				if let Some(cell) = self.get_cell(x, y) {
-					print!("{}", match cell {
-						Cell::Air => " ",
-						Cell::Rock => "X",
-						Cell::Sand => "O",
-						Cell::Water => "~",
-					})
-				}
-			}
-			println!()
-		}
-		println!()
-	}
 }
