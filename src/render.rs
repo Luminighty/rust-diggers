@@ -1,4 +1,4 @@
-use crate::{automata::{World, Cell}, WIDTH, HEIGHT};
+use crate::{automata::{World, CellData, cell}, WIDTH, HEIGHT};
 
 pub fn render(world: &World, screen: &mut [u8]) {
   for (i, pixel) in (0..WIDTH*HEIGHT).zip(screen.chunks_exact_mut(4)) {
@@ -9,16 +9,10 @@ pub fn render(world: &World, screen: &mut [u8]) {
   }
 }
 
-fn get_color(cell: Option<Cell>) -> [u8; 4] {
-  match cell {
-    None => [0, 0, 0, 0xff],
-    Some(Cell::Air) => [0, 0, 0, 0xff],
-    Some(Cell::Sand) => [0xff, 0xbb, 0x00, 0xff],
-    Some(Cell::Rock) => [0x55, 0x55, 0x77, 0xff],
-    Some(Cell::Water) => [0x30, 0x90, 0xbb, 0xff],
-    Some(Cell::Smoke) => [0x30, 0x30, 0x30, 0xff],
-    Some(Cell::Slime) => [0x66, 0x22, 0x66, 0xff],
-    Some(Cell::Oil) => [0x88, 0x66, 0x44, 0xff],
-    Some(Cell::Dirt) => [0x99, 0x55, 0x22, 0xff],
+fn get_color(cell: Option<CellData>) -> [u8; 4] {
+  if let Some(cell) = cell {
+    cell.color
+  } else {
+    [0, 0, 0, 0]
   }
 }

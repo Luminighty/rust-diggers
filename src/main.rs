@@ -1,7 +1,7 @@
 mod render;
 mod automata;
 
-use automata::{World, Cell};
+use automata::{World, CellData};
 use pixels::{self, SurfaceTexture, Pixels, Error};
 
 use rand::thread_rng;
@@ -31,7 +31,7 @@ fn main() -> Result<(), Error>  {
 					.unwrap()
 	};
 
-	let mut world = World::new(WIDTH as isize, HEIGHT as isize);
+	let mut world = World::new();
 
 	let mut pixels = {
 			let window_size = window.inner_size();
@@ -42,44 +42,19 @@ fn main() -> Result<(), Error>  {
 	let mut tick: usize = 0;
 	let mut mouse = PhysicalPosition::new(0, 0);
 	let mut mouse_state = ElementState::Released;
-	let mut selected_cell = Cell::Sand;
 	event_loop.run(move |event, _, control_flow| {
 		match event {
 			Event::WindowEvent { event: WindowEvent::CloseRequested, ..} => {
-				println!("The close button was pressed; stopping");
+				println!("Goodnight");
 				control_flow.set_exit();
 			}
 			Event::WindowEvent { event: WindowEvent::CursorMoved { position, .. }, .. } => {
-				mouse = PhysicalPosition::new((position.x / UPSCALE) as i32, (position.y / UPSCALE) as i32);
 			}
 			Event::WindowEvent { event: WindowEvent::MouseInput { state, .. }, .. } => {
-				mouse_state = state;
 			}
 			Event::WindowEvent { event: WindowEvent::KeyboardInput { input,  .. }, ..} => {
-				if input.state == ElementState::Released {
-					return;
-				}
-				match input.virtual_keycode {
-					Some(VirtualKeyCode::F1) => { selected_cell = Cell::Air; },
-					Some(VirtualKeyCode::F2) => { selected_cell = Cell::Rock; },
-					Some(VirtualKeyCode::F3) => { selected_cell = Cell::Sand; },
-					Some(VirtualKeyCode::F4) => { selected_cell = Cell::Water; },
-					Some(VirtualKeyCode::F5) => { selected_cell = Cell::Smoke; },
-					Some(VirtualKeyCode::F6) => { selected_cell = Cell::Oil; },
-					Some(VirtualKeyCode::F7) => { selected_cell = Cell::Slime; },
-					Some(VirtualKeyCode::F8) => { selected_cell = Cell::Dirt; },
-					_ => {}
-				}
 			}
 			Event::MainEventsCleared => {
-				if mouse_state == ElementState::Pressed {
-					const BRUSH: isize = 4;
-					for brush_x in -BRUSH..BRUSH {
-						for brush_y in -BRUSH..BRUSH {
-							world.set_cell(brush_x + mouse.x as isize, brush_y + mouse.y as isize, selected_cell)
-						}	
-					}
-				}
 				automata::step(&mut world);
 				window.request_redraw();
 				tick += 1;
