@@ -1,3 +1,5 @@
+use std::{borrow::BorrowMut, ops::DerefMut};
+
 use rand::{seq::SliceRandom, thread_rng};
 
 use crate::{game::{GameState, System}, HEIGHT, WIDTH, app::{Input, ButtonState, Key}};
@@ -67,6 +69,7 @@ fn god_mode(input: &Input, world: &mut World, cell: &Cell) {
         continue;
       }
       world.set_cell(x, y, cell.build());
+      awake_neighbours(world, x, y);
     }
   }
 }
@@ -76,8 +79,23 @@ fn apply_actions(world: &mut World) {
   for i in 0..world.actions.actions.len() {
     let ((to_x, to_y), (from_x, from_y)) = world.actions.actions[i];
     world.move_cell(from_x, from_y, to_x, to_y);
+    awake_neighbours(world, from_x, from_y);
+    awake_neighbours(world, to_x, to_y);
   }
   world.actions.clear();
+}
+
+fn awake_neighbours(world: &mut World, x: isize, y: isize) {
+  world.set_sleep(x - 1, y - 1, false);
+  world.set_sleep(x - 1, y, false);
+  world.set_sleep(x - 1, y + 1, false);
+
+  world.set_sleep(x + 1, y - 1, false);
+  world.set_sleep(x + 1, y, false);
+  world.set_sleep(x + 1, y + 1, false);
+
+  world.set_sleep(x, y - 1, false);
+  world.set_sleep(x, y + 1, false);
 }
 
 fn update_cell(world: &mut World, i: usize) {
@@ -86,7 +104,10 @@ fn update_cell(world: &mut World, i: usize) {
   }
   let binding = world.cells[i].clone().unwrap();
   let cell = binding.borrow();
-  for (delta_x, delta_y) in cell.behaviour.steps() {
+  if cell.is_sleeping {
+    return;
+  }
+  for (delta_x, delta_y) in cell.behaviour().steps() {
     let from_x = i as isize % WIDTH;
     let from_y = i as isize / WIDTH;
     let to_x = from_x + delta_x;
@@ -95,13 +116,17 @@ fn update_cell(world: &mut World, i: usize) {
       continue;
     }
     if let Some(other) = world.get_cell(to_x, to_y) {
-      if other.borrow().density >= cell.density {
+      if other.borrow().density() >= cell.density() {
         continue;
       }
     }
     world.actions.move_cell(from_x, from_y, to_x, to_y);
     return;
   }
+  drop(cell);
+
+  let mut cell = (*binding).borrow_mut();
+  cell.is_sleeping = true;
 }
 
 fn is_inbound(x: isize, y: isize) -> bool {
