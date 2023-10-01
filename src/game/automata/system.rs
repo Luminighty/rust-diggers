@@ -43,6 +43,15 @@ fn palette_select(game_state: &mut GameState) {
   if game_state.input.key(Key::Key0) == &ButtonState::Released {
     game_state.selected_cell_type = Cell::Air;
   }
+  if game_state.input.key(Key::Key4) == &ButtonState::Released {
+    game_state.selected_cell_type = Cell::Smoke;
+  }
+  if game_state.input.key(Key::Key5) == &ButtonState::Released {
+    game_state.selected_cell_type = Cell::Slime;
+  }
+  if game_state.input.key(Key::Key6) == &ButtonState::Released {
+    game_state.selected_cell_type = Cell::Dirt;
+  }
 }
 
 const BRUSH: isize = 3;

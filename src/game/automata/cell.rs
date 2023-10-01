@@ -26,11 +26,3 @@ pub struct CellData {
 	pub behaviour: CellBehaviour,
 	pub density: Density,
 }
-
-
-impl CellData {
-	pub fn new(behaviour: CellBehaviour, color: Color, density: u16) -> Self {
-		Self { behaviour, color, density }
-	}
-
-}

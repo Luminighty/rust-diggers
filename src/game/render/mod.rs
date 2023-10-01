@@ -1,6 +1,6 @@
 use crate::{WIDTH, HEIGHT};
 
-use super::{automata::{CellData, StoredCell}, GameState};
+use super::{automata::StoredCell, GameState};
 
 type Screen = [u8];
 

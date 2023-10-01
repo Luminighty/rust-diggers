@@ -1,14 +1,11 @@
 mod app;
 mod game;
+mod config;
 
 use app::AppError;
+use config::{WIDTH, HEIGHT, UPSCALE, TITLE};
 use pixels::{self, SurfaceTexture, Pixels};
 
-const TITLE: &str = "Sand";
-
-pub const WIDTH: isize = 100;
-pub const HEIGHT: isize = 100;
-const UPSCALE: f64 = 3.0;
 
 const SCALED_WIDTH: f64 = WIDTH as f64 * UPSCALE;
 const SCALED_HEIGHT: f64 = HEIGHT as f64 * UPSCALE;

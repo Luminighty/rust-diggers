@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc, cell::RefCell};
+use std::{rc::Rc, cell::RefCell};
 
 use crate::{WIDTH, HEIGHT};
 

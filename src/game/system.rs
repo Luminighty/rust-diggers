@@ -1,6 +1,6 @@
 pub trait System<T> {
-  fn init(&self, data: &mut T) {}
-  fn update(&self, data: &mut T) {}
+  fn init(&self, _data: &mut T) {}
+  fn update(&self, _data: &mut T) {}
 }
 
 pub struct SystemCollection<T> {
